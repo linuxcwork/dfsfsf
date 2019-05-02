@@ -26,7 +26,7 @@ public class LoginAction extends HttpServlet {
 	protected Connection register_cnn = null;
 	private String register_driverName = null;
 	//private String register_url = null;
-	private Connection connect = null;
+	public Connection connect = null;
 	/**
 	 * Constructor of the object.
 	 */
@@ -76,7 +76,7 @@ public class LoginAction extends HttpServlet {
 	 * @throws IOException if an error occurred
 	 */
 	public void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {		
+			throws ServletException, IOException {	
 		Statement statement = null;
 		ResultSet rs = null;
 		PrintWriter out = response.getWriter();
@@ -85,16 +85,30 @@ public class LoginAction extends HttpServlet {
 		request.setCharacterEncoding("UTF-8");
 		response.setContentType("text/xml;UTF-8");
 		String address = request.getRemoteAddr();
-		System.out.println("长度"+request.getContentLength()+":"+address);
-		personalInformation.name = request.getParameter("username");
+		System.out.println("长度"+request.getContentLength()+":"+address+request.getParameter("id"));
+		personalInformation.telphone = request.getParameter("id");
 		personalInformation.passwd = request.getParameter("passwd");
+		personalInformation.devicename = request.getParameter(personalInformation.devicenString);
 		try {
+			if(connect == null){
+				System.out.print("LoginAction: connect is fail;");
+			}
+			
 			statement = connect.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
 			rs = statement.executeQuery("SELECT * FROM sqlinfo;");
 			while(rs.next()){
 				table = rs.getString("tablename");
-				if(queryuseraccordtelphone(table, personalInformation.name,personalInformation.passwd))
+				System.out.println(table);
+				if(queryuseraccordtelphone(table, personalInformation))
 				{
+					dbbasetool db = new dbbasetool(connect);
+					db.updateAccordKey(table, personalInformation.id, personalInformation.sTATEsString, "1");
+					db.updateAccordKey(table, personalInformation.id, personalInformation.devicenString, personalInformation.devicename);
+					SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");     
+					String date = sDateFormat.format(new java.util.Date()); 
+					System.out.print(date);
+					db.updateAccordKey(table, personalInformation.id, personalInformation.lOGINTIMEString, date);
+					out.print(personalInformation);
 					out.println("login");
 					return;
 				}
@@ -123,12 +137,13 @@ public class LoginAction extends HttpServlet {
 	 * 函数名: queryuseraccordtelphone
 	 * 功能:   查询数据库中是否存在当前手机号已注册用户
 	 * 返回:   存在返回 true，else false*/
-	protected boolean queryuseraccordtelphone(String table,String tel,String passwd) throws SQLException{
+	public boolean queryuseraccordtelphone(String table,PersonalInformation personalInformation) throws SQLException{
 		boolean exist;
 		ResultSet retResultSet= null;
 		Statement statement = connect.createStatement();
-		retResultSet = statement.executeQuery("SELECT * FROM "+table+" WHERE telphone='"+tel+"' AND passwd='"+passwd+"';");
+		retResultSet = statement.executeQuery("SELECT * FROM `"+table+"` WHERE telphone='"+personalInformation.telphone+"' AND passwd='"+personalInformation.passwd+"';");
 		if (retResultSet.next()) {
+			assignment(personalInformation, retResultSet);
 			exist = true;
 		} else {
 			exist = false;
@@ -137,6 +152,19 @@ public class LoginAction extends HttpServlet {
 		statement.close();
 		return exist;
 	}
+	
+	
+	/*
+	 * 函数名: assignment
+	 * 功能:   将查询到的数据填充到用户体中
+	 * 返回:   无返回值*/
+    public void assignment(PersonalInformation personalInformation,ResultSet retResultSet) throws SQLException{
+    	personalInformation.id = retResultSet.getString(personalInformation.iDString);
+    	personalInformation.name = retResultSet.getString("name");
+    	personalInformation.ismarry = retResultSet.getBoolean("ismarry");
+    	personalInformation.age = retResultSet.getString("age");
+    	
+    }
 
 	/**
 	 * Initialization of the servlet. <br>

@@ -163,7 +163,9 @@ public class RegisterActionsql extends HttpServlet {
 		long count_full = 0;
 		String table = null;
 		String sort = null;
+		Boolean registerstate = false;
 		
+		//获取验证码
 		String verString = request.getParameter("verifycode");
 		if(verString != null){
 			System.out.println("ver");
@@ -177,19 +179,14 @@ public class RegisterActionsql extends HttpServlet {
 		try {
 			statement = connect.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
 			rs = statement.executeQuery("SELECT * FROM sqlinfo;");	
-			if(rs == null){
-				//statement.execute("UPDATE sqlinfo SET isfull=1 WHERE tablename="+rs.getString("tablename")+";");
-				Date date = new Date();
-				table = new SimpleDateFormat("yyyyMMddhhmm_ss").format(date);
-				db.createdbtable(table);
-				statement.execute("INSERT INTO sqlinfo (count,tablename,isfull) VALUES (0,'"+table+"',0);");
-			}else {
-				while(rs.next()){
+			if(rs.first() == true){
+				do{
 					table = rs.getString("tablename");
 					if(queryuseraccordtelphone(table, personalInformation.telphone))
 					{
 						out.println("registered");
-						return;
+						registerstate = true;
+						break;
 					}
 				
 					if(rs.getBoolean("isfull") == true){
@@ -209,9 +206,17 @@ public class RegisterActionsql extends HttpServlet {
 						statement.execute("UPDATE SQLINFO SET count='"+sort+"' WHERE tablename='"+table+"';");
 						System.out.println("while"+sort+table);
 						break;
-					}			
+					}		
 					System.out.println("while"+rs.getString("count").toString()+rs.getObject("tablename"));
-				}
+				}while(rs.next());
+				
+			}else {
+				System.out.println("fffffffffffffffffffffffff");
+				Date date = new Date();
+				table = new SimpleDateFormat("yyyyMMddhhmmss").format(date);
+				db.createdbtable(table);
+				personalInformation.id = table+"0";
+				statement.execute("INSERT INTO sqlinfo (count,tablename,isfull) VALUES (0,'"+table+"',0);");
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -221,9 +226,11 @@ public class RegisterActionsql extends HttpServlet {
 		System.out.println(personalInformation.id+":"+personalInformation.name+":"+personalInformation.passwd+":"+personalInformation.telphone);
 		//personalInformation. = request.getParameter("verification");
 		try {
+			if(registerstate == false){
 				db.addUser(table, personalInformation);
 				out.println("register");
 				db.close();
+			}
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block

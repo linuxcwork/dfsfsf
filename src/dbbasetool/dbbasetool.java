@@ -16,6 +16,8 @@ public class dbbasetool {
 		this.connect = connection;
 	}
 	
+	
+	
 	/*
 	 * 函数名 ：adduser
 	 * 功能：    注册时，添加用户
@@ -23,9 +25,9 @@ public class dbbasetool {
 	public Boolean addUser(String table,PersonalInformation personalInformation) throws SQLException{
 		Boolean retBoolean;
 		statement = connect.createStatement();
-		retBoolean = statement.execute("INSERT INTO "+
+		retBoolean = statement.execute("INSERT INTO `"+
 				table+
-				" (id,name,passwd,telphone) VALUES ('"+
+				"` (id,name,passwd,telphone) VALUES ('"+
 				personalInformation.id+"','"+
 				personalInformation.name+"','"+
 				personalInformation.passwd+"','" +
@@ -42,11 +44,14 @@ public class dbbasetool {
 		Boolean retBoolean;
 		PersonalInformation personalInformation = new PersonalInformation();
 		statement = connect.createStatement();
-		retBoolean = statement.execute("CREATE TABLE "+table+" ("+
+		retBoolean = statement.execute("CREATE TABLE IF NOT EXISTS `"+table+"`("+
 			personalInformation.iDString+" VARCHAR(18) NOT NULL,"+
-			personalInformation.nAMEString+" VARCHAR(32)"+","+
+			personalInformation.nAMEString+" VARCHAR(32),"+
+			personalInformation.sTATEsString+" TINYINT,"+
+			personalInformation.devicenString+" VARCHAR(32),"+
+			personalInformation.lOGINTIMEString+" DATETIME,"+
 			personalInformation.iMAString+" TEXT,"+
-			personalInformation.pASSWDString+" VARCHAR(80),"+
+			personalInformation.pASSWDString+" VARCHAR(32),"+
 			personalInformation.aGEString+" TINYINT,"+
 			personalInformation.iSMARRYString+" TINYINT,"+
 			personalInformation.hOMEADDRString+" CHAR,"+
@@ -74,7 +79,7 @@ public class dbbasetool {
 	public ResultSet queryData(String table,String key,String data) throws SQLException {
 		ResultSet ret = null;
 		statement = connect.createStatement();
-		ret = statement.executeQuery("SELECT "+key+" FROM "+table+" WHERE "+key+"="+data+";");
+		ret = statement.executeQuery("SELECT "+key+" FROM `"+table+"` WHERE "+key+"="+data+";");
 		return ret;
 	}
 	
@@ -89,7 +94,7 @@ public class dbbasetool {
 	 * */
 	public void updateAccordKey(String table,String id,String key,String data) throws SQLException{
 		statement = connect.createStatement();
-	    statement.executeQuery("UPDATE "+table+" SET "+key+"='"+data+"' WHERE id='"+id+"';");
+	    statement.execute("UPDATE `"+table+"` SET "+key+"='"+data+"' WHERE id='"+id+"';");
 	}
 	/*
 	 * 功能：删除指定用户，仅对于 id 键值

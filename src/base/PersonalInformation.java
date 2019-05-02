@@ -18,14 +18,28 @@ public class PersonalInformation {
 	public String name;
 	public String pASSWDString = "passwd";
 	public String passwd;
+	//状态
+	public Boolean stateBoolean;
+	public String sTATEsString = "state";
+	//登陆设备名
+	public String devicename;
+	public String devicenString = "devicename";
+	//登录时间
+	public String logintimeString;
+	public String lOGINTIMEString ="logintime";
 	//是否已婚
 	public String iSMARRYString = "ismarry";
 	public Boolean ismarry;
 	public String aGEString = "age";
-	public char age;
+	public String age;
 	//家庭住址
 	public String hOMEADDRString = "homeaddr";
 	public String home_addr;
+	//经纬度
+	public String LATITUDE = "latitude";
+	public String latitudeString; 
+	public String lONGITUDEString = "longitude";
+	public String longitude;
 	//现居地
 	public String pRESENTADDRString = "presentaddr";
 	public String present_addr;
@@ -53,6 +67,7 @@ public class PersonalInformation {
 	//人生值
 	public String IFEVALUString = "lifevalus";
 	public int lifevalue;
+	
 /*	//以下为选填
 	//家庭情况
 	public String fATJERNAMEString = "fathername";

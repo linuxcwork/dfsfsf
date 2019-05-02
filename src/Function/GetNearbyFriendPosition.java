@@ -6,11 +6,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -21,8 +29,17 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 
+import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
+
+import base.PersonalInformation;
+
 public class GetNearbyFriendPosition extends HttpServlet {
 
+	private PersonalInformation personalInformation = null;
+	protected Connection register_cnn = null;
+	private String register_driverName = null;
+	//private String register_url = null;
+	private Connection connect = null;
 	/**
 	 * Constructor of the object.
 	 */
@@ -74,7 +91,63 @@ public class GetNearbyFriendPosition extends HttpServlet {
 
 		response.setContentType("text/html");
 		PrintWriter out = response.getWriter();
-		// 1. 创建配置工厂
+		Statement statement = null;
+		Map<Integer, Object> map = new HashMap<Integer, Object>();
+		System.out.println(request.getParameter("latitude")+":"+request.getParameter("longitude"));
+		String latitude = request.getParameter("latitude");
+		String longitude = request.getParameter("longitude");
+		String requestcode = request.getParameter("requestcode"); 
+		String userid = request.getParameter("userid"); 
+		System.out.println(requestcode.length());
+		if (requestcode == null && latitude == null && longitude == null && userid == null) {
+			return;
+		}
+		
+		try {
+			statement = connect.createStatement();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		if (requestcode.equals("getposition")){
+			try {
+				ResultSet resultSet = statement.executeQuery("SELECT * FROM userposition WHERE latitude<"+latitude+" && latitude>"+latitude+" && longitude<"+longitude+" && longitude>"+longitude+";");
+				while (resultSet.next()){
+					int i = 0;
+					map.put(i,resultSet.getString(i));
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//out.append(map);
+			
+		} else if (requestcode.equals("syncposition")) {
+			
+			try {
+				statement.execute("CREATE TABLE IF NOT EXISTS userposition ("+
+					personalInformation.iDString+" VARCHAR(24) NOT NULL,"+
+					personalInformation.LATITUDE+" VARCHAR(34) NOT NULL,"+
+					personalInformation.lONGITUDEString+" VARCHAR(34) NOT NULL"+
+					");");
+				ResultSet resultset = statement.executeQuery("SELECT * FROM userposition WHERE id='"+userid+"';");
+				if(resultset.next()){
+				Boolean retBoolean = statement.execute("UPDATE userposition SET latitude='"+latitude+"',longitude='"+
+						longitude+"' WHERE id='"+userid+"';");
+				} else {
+					statement.execute("INSERT INTO userposition (id,latitude,longitude) VALUES ("+
+							userid+","+
+							latitude+","+
+							longitude+");");
+				}
+				//System.out.println(retBoolean);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		/*// 1. 创建配置工厂
         DiskFileItemFactory factory = new DiskFileItemFactory();
         // 2. 根据配置工厂创建解析请求中文件上传内容的解析器
         ServletFileUpload upload = new ServletFileUpload(factory);
@@ -109,8 +182,8 @@ public class GetNearbyFriendPosition extends HttpServlet {
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("/yyyy/MM/dd/");
                         String datePath = simpleDateFormat.format(new Date()); // 解析成    /2017/04/15/  的样子, 注意这是三个文件夹
                         String wholePath = "D:/upload"+datePath;
-                        /*第三方提供的方法直接写到文件中。 
-                         * item.write(new File(path,filename));*/  
+                        第三方提供的方法直接写到文件中。 
+                         * item.write(new File(path,filename));  
                         //收到写到接收的文件中。  
                         OutputStream out1 = new FileOutputStream(new File(wholePath,filename));  
                         InputStream in = fileItem.getInputStream();  
@@ -125,7 +198,7 @@ public class GetNearbyFriendPosition extends HttpServlet {
                         in.close();  
                         out1.close();  
               
-                        /*// 获得文件上传段中，文件的流
+                        // 获得文件上传段中，文件的流
                         InputStream in = fileItem.getInputStream();
 
                         // 使用用户上传的文件名来保存文件的话，文件名可能重复。
@@ -146,13 +219,13 @@ public class GetNearbyFriendPosition extends HttpServlet {
                         FileOutputStream fos = new FileOutputStream(wholePath+fileName);
                         // 将输入流复制到输出流中
                         IOUtils.copy(in, fos);
-                      fos.close();*/
+                      fos.close();
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 		
 		out.append("dddddddddddddddddddddddd");
 		out.flush();
@@ -164,8 +237,29 @@ public class GetNearbyFriendPosition extends HttpServlet {
 	 *
 	 * @throws ServletException if an error occurs
 	 */
-	public void init() throws ServletException {
+	public void init(ServletConfig config) throws ServletException {
 		// Put your code here
+				personalInformation = new PersonalInformation();
+				// Put your code here
+				register_driverName=config.getInitParameter("driverName");
+				//register_url=config.getInitParameter("url");
+				
+				try {
+					Class.forName("com.mysql.jdbc.Driver");
+					//register_cnn = DriverManager.getConnection(register_url);
+				} catch(Exception e) {
+					System.out.println("取得数据库连接错误："+e.getMessage());
+				}
+				try {
+					connect = DriverManager.getConnection("jdbc:mysql://localhost:3306/user","root","123456");
+					//连接URL为   jdbc:mysql//服务器地址/数据库名  ，后面的2个参数分别是登陆用户名和密码
+
+					System.out.println("Success connect Mysql server!");
+				}
+				catch (Exception e) {
+					System.out.print("get data error!");
+					e.printStackTrace();
+				}
 	}
 
 }
